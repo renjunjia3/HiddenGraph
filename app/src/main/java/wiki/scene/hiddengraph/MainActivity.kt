@@ -6,14 +6,18 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.blankj.utilcode.util.ToastUtils
 import com.blankj.utilcode.util.Utils
 import com.bumptech.glide.Glide
+import com.hjq.permissions.Permission
+import com.hjq.permissions.XXPermissions
 import com.zhihu.matisse.Matisse
 import com.zhihu.matisse.MimeType
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import com.hjq.permissions.OnPermission
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,26 +31,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Utils.init(applicationContext)
-        btnChooseHideImage.setOnClickListener {
-            Matisse.from(this@MainActivity)
-                .choose(MimeType.ofImage())
-                .countable(true)
-                .maxSelectable(1)
-                .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-                .thumbnailScale(0.85f)
-                .imageEngine(Glide4Engine())
-                .forResult(REQ_HIDE_IMAGE)
-        }
-
         btnChooseShowImage.setOnClickListener {
-            Matisse.from(this@MainActivity)
-                .choose(MimeType.ofImage())
-                .countable(true)
-                .maxSelectable(1)
-                .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-                .thumbnailScale(0.85f)
-                .imageEngine(Glide4Engine())
-                .forResult(REQ_SHOW_IMAGE)
+            chooseImage(1)
+        }
+        btnChooseHideImage.setOnClickListener {
+            chooseImage(2)
+
         }
         btnCreateResultImage.setOnClickListener {
             val dialog: ProgressDialog = ProgressDialog.show(this@MainActivity, "提示", "正在处理图片...");
@@ -85,5 +75,35 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    fun chooseImage(type: Int) {
+        if (XXPermissions.isHasPermission(this, Permission.Group.STORAGE)) {
+            toChooseImage(type)
+        } else {
+            XXPermissions.with(this)
+                .constantRequest() //可设置被拒绝后继续申请，直到用户授权或者永久拒绝
+                .permission(Permission.Group.STORAGE)
+                .request(object : OnPermission {
+                    override fun hasPermission(granted: List<String>, isAll: Boolean) {
+                        toChooseImage(type)
+                    }
+
+                    override fun noPermission(denied: List<String>, quick: Boolean) {
+                        ToastUtils.showShort("权限被拒绝，请先开启权限")
+                    }
+                })
+        }
+    }
+
+    fun toChooseImage(type: Int) {
+        Matisse.from(this@MainActivity)
+            .choose(MimeType.ofImage())
+            .countable(true)
+            .maxSelectable(1)
+            .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+            .thumbnailScale(0.85f)
+            .imageEngine(Glide4Engine())
+            .forResult(if (type == 1) REQ_SHOW_IMAGE else REQ_HIDE_IMAGE)
     }
 }
