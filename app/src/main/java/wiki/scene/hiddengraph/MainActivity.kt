@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.TextUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.blankj.utilcode.util.Utils
 import com.bumptech.glide.Glide
@@ -39,6 +40,14 @@ class MainActivity : AppCompatActivity() {
 
         }
         btnCreateResultImage.setOnClickListener {
+            if (TextUtils.isEmpty(showImagePath)) {
+                ToastUtils.showShort("请选择显示的图片")
+                return@setOnClickListener
+            }
+            if (TextUtils.isEmpty(hideImagePath)) {
+                ToastUtils.showShort("请选择隐藏的图片")
+                return@setOnClickListener
+            }
             val dialog: ProgressDialog = ProgressDialog.show(this@MainActivity, "提示", "正在处理图片...");
             Observable.create<String> {
                 it.onNext(HiddenImageUtil.calculateHiddenImage(showImagePath, hideImagePath))
